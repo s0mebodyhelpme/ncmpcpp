@@ -62,6 +62,7 @@
 #include "screens/tag_editor.h"
 #include "screens/tiny_tag_editor.h"
 #include "screens/visualizer.h"
+#include "screens/artwork.h"
 #include "title.h"
 #include "tags.h"
 
@@ -159,6 +160,10 @@ void initializeScreens()
 #	ifdef ENABLE_VISUALIZER
 	myVisualizer = new Visualizer;
 #	endif // ENABLE_VISUALIZER
+
+#	ifdef ENABLE_ARTWORK
+	myArtwork = new Artwork;
+#	endif // ENABLE_ARTWORK
 	
 #	ifdef ENABLE_OUTPUTS
 	myOutputs = new Outputs;
@@ -194,6 +199,10 @@ void setResizeFlags()
 	myVisualizer->hasToBeResized = 1;
 #	endif // ENABLE_VISUALIZER
 	
+#	ifdef ENABLE_ARTWORK
+	myArtwork->hasToBeResized = 1;
+#	endif // ENABLE_ARTWORK
+
 #	ifdef ENABLE_OUTPUTS
 	myOutputs->hasToBeResized = 1;
 #	endif // ENABLE_OUTPUTS
@@ -2746,6 +2755,15 @@ void ShowServerInfo::run()
 	myServerInfo->switchTo();
 }
 
+bool ShowArtwork::canBeRun()
+{
+	return myScreen != myArtwork;
+}
+
+void ShowArtwork::run() {
+	myArtwork->switchTo();
+}
+
 }
 
 namespace {
@@ -2884,6 +2902,7 @@ void populateActions()
 	insert_action(new Actions::ShowVisualizer());
 	insert_action(new Actions::ShowClock());
 	insert_action(new Actions::ShowServerInfo());
+	insert_action(new Actions::ShowArtwork());
 	for (size_t i = 0; i < AvailableActions.size(); ++i)
 	{
 		if (AvailableActions[i] == nullptr)
