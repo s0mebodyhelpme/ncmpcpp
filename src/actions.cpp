@@ -2757,11 +2757,17 @@ void ShowServerInfo::run()
 
 bool ShowArtwork::canBeRun()
 {
+#ifdef ENABLE_ARTWORK
 	return myScreen != myArtwork;
+#else
+	return false;
+#endif // ENABLE_ARTWORK
 }
 
 void ShowArtwork::run() {
+#ifdef ENABLE_ARTWORK
 	myArtwork->switchTo();
+#endif // ENABLE_ARTWORK
 }
 
 }
