@@ -56,13 +56,13 @@ DestT verbose_lexical_cast(const std::string &v)
 }
 
 template <typename ValueT, typename ConvertT>
-std::vector<ValueT> list_of(const std::string &v, ConvertT convert)
+std::vector<ValueT> list_of(const std::string &v, ConvertT convert, bool allow_empty = false)
 {
 	std::vector<ValueT> result;
 	boost::tokenizer<boost::escaped_list_separator<char>> elems(v);
 	for (auto &value : elems)
 		result.push_back(convert(boost::trim_copy(value)));
-	if (result.empty())
+	if (!allow_empty && result.empty())
 		throw std::runtime_error("empty list");
 	return result;
 }
@@ -71,6 +71,12 @@ template <typename ValueT>
 std::vector<ValueT> list_of(const std::string &v)
 {
 	return list_of<ValueT>(v, verbose_lexical_cast<ValueT>);
+}
+
+template <typename ValueT>
+std::vector<ValueT> list_of_allow_empty(const std::string &v)
+{
+	return list_of<ValueT>(v, verbose_lexical_cast<ValueT>, true);
 }
 
 bool yes_no(const std::string &v);
