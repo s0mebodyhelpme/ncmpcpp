@@ -220,6 +220,7 @@ struct Configuration
 
 	LyricsFetchers lyrics_fetchers;
 
+#	ifdef ENABLE_ARTWORK
 	bool albumart;
 	Artwork::ArtBackend albumart_backend;
 	Artwork::ArtAlign albumart_align;
@@ -227,6 +228,7 @@ struct Configuration
 	std::vector<Artwork::ArtSource> albumart_sources;
 	size_t font_width, font_height;
 	int albumart_xoffset, albumart_yoffset;
+#	endif
 };
 
 extern Configuration Config;
