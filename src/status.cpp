@@ -193,14 +193,29 @@ void Status::handleServerError(MPD::ServerError &e)
 	Statusbar::printf("MPD: %1%", e.what());
 	if (e.code() == MPD_SERVER_ERROR_PERMISSION)
 	{
-		NC::Window::ScopedPromptHook helper(*wFooter, nullptr);
-		Statusbar::put() << "Password: ";
-		Mpd.SetPassword(wFooter->prompt("", -1, true));
-		try {
+		try
+		{
+			NC::Window::ScopedPromptHook helper(*wFooter, nullptr);
+			Statusbar::put() << "Password: ";
+			Mpd.SetPassword(wFooter->prompt("", -1, true));
 			Mpd.SendPassword();
 			Statusbar::print("Password accepted");
-		} catch (MPD::ServerError &e_prim) {
-			handleServerError(e_prim);
+		}
+		// SendPassword might throw if connection is closed
+		catch (MPD::ClientError &e_prim)
+		{
+			handleClientError(e_prim);
+		}
+		// Wrong password, we'll ask again later
+		catch (MPD::ServerError &e_prim)
+		{
+			Statusbar::printf("MPD: %1%", e_prim.what());
+		}
+		// If prompt asking for a password is aborted, exit the application to
+		// prevent getting stuck in the prompt indefinitely.
+		catch (NC::PromptAborted &)
+		{
+			Actions::ExitMainLoop = true;
 		}
 	}
 }
@@ -493,7 +508,7 @@ void Status::Changes::playerState(bool drawArtwork)
 		};
 		setenv("MPD_PLAYER_STATE", stateToEnv(m_player_state), 1);
 		// Since we're setting a MPD_PLAYER_STATE, we need to block.
-		runExternalCommandNoOutput(Config.execute_on_player_state_change, true);
+		runExternalCommand(Config.execute_on_player_state_change, true);
 		unsetenv("MPD_PLAYER_STATE");
 	}
 
@@ -582,7 +597,11 @@ void Status::Changes::songID(int song_id)
 		if (!s.empty())
 		{
 			if (!Config.execute_on_song_change.empty())
-				runExternalCommandNoOutput(Config.execute_on_song_change, false);
+			{
+				// We need to block to allow sending output to the terminal so a script
+				// can e.g. set the album art.
+				runExternalCommand(Config.execute_on_song_change, true);
+			}
 
 			if (Config.fetch_lyrics_in_background)
 				myLyrics->fetchInBackground(s, false);

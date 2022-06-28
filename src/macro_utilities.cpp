@@ -87,7 +87,7 @@ RunExternalCommand::RunExternalCommand(std::string &&command)
 
 void RunExternalCommand::run()
 {
-	runExternalCommandNoOutput(m_command, false);
+	runExternalCommand(m_command, true);
 }
 
 RunExternalConsoleCommand::RunExternalConsoleCommand(std::string &&command)
@@ -113,11 +113,11 @@ void runExternalConsoleCommand(const std::string &cmd)
 	NC::unpauseScreen();
 }
 
-void runExternalCommandNoOutput(const std::string &cmd, bool block)
+void runExternalCommand(const std::string &cmd, bool block)
 {
 	if (block)
-		std::system((cmd + " >/dev/null 2>&1").c_str());
+		std::system(cmd.c_str());
 	else
+		// If we don't block, disregard any output.
 		std::system(("nohup " + cmd + " >/dev/null 2>&1 &").c_str());
-
 }

@@ -1,3 +1,14 @@
+# ncmpcpp-0.10 (????-??-??)
+* Add the configuration option `mpd_password`.
+* Separate chunks of lyrics with a double newline.
+* Fix separator between albums with the same name, to check for album artist
+  instead of artist.
+
+# ncmpcpp-0.9.2 (2021-01-24)
+* Revert suppression of output of all external commands as that makes e.g album
+  art addons no longer work.
+* Gracefully handle failures when asking for a password.
+
 # ncmpcpp-0.9.1 (2020-12-23)
 * Add support for fetching lyrics from musixmatch.com.
 * Fix intermittent failures of the Genius fetcher.

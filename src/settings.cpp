@@ -212,28 +212,6 @@ void deprecated(const char *option, const char *version_removal,
 bool Configuration::read(const std::vector<std::string> &config_paths, bool ignore_errors)
 {
 	option_parser p;
-
-	// Deprecated options.
-	p.add("visualizer_fifo_path", &visualizer_fifo_path, "", [](std::string v) {
-		if (!v.empty())
-		{
-			deprecated("visualizer_fifo_path",
-			           "0.10",
-			           "replaced by visualizer_data_source");
-		}
-		return adjust_path(v);
-	});
-	p.add<void>("visualizer_sync_interval", nullptr, "", [](std::string v) {
-		if (!v.empty())
-		{
-			deprecated("visualizer_sync_interval",
-			           "0.10",
-			           "set 'buffer_time' parameter of your MPD audio output to '100000' "
-			           "(100ms) or lower if you experience synchronization issues "
-			           "between audio and visualization");
-		}
-	});
-
 	// keep the same order of variables as in configuration file
 	p.add("ncmpcpp_directory", &ncmpcpp_directory, "~/.config/ncmpcpp/", adjust_directory);
 	p.add("lyrics_directory", &lyrics_directory, "~/.lyrics/", adjust_directory);
@@ -243,6 +221,10 @@ bool Configuration::read(const std::vector<std::string> &config_paths, bool igno
 		});
 	p.add<void>("mpd_port", nullptr, "6600", [](std::string port) {
 			Mpd.SetPort(verbose_lexical_cast<unsigned>(port));
+		});
+	p.add<void>("mpd_password", nullptr, "", [](std::string password) {
+			if (!password.empty())
+				Mpd.SetPassword(password);
 		});
 	p.add("mpd_music_dir", &mpd_music_dir, "~/music", adjust_directory);
 	p.add("mpd_connection_timeout", &mpd_connection_timeout, "5");
@@ -266,7 +248,7 @@ bool Configuration::read(const std::vector<std::string> &config_paths, bool igno
 	p.add("visualizer_fps", &visualizer_fps,
 			"60", [](std::string v) {
 			uint32_t result = verbose_lexical_cast<uint32_t>(v);
-			boundsCheck<uint32_t>(result, 30, 144);
+			boundsCheck<uint32_t>(result, 30, 1000);
 			return result;
 			});
 	p.add("visualizer_autoscale", &visualizer_autoscale, "no", yes_no);
@@ -530,6 +512,12 @@ bool Configuration::read(const std::vector<std::string> &config_paths, bool igno
 	      });
 	p.add("ask_for_locked_screen_width_part", &ask_for_locked_screen_width_part,
 	      "yes", yes_no);
+	p.add("media_library_column_width_ratio_two", &media_library_column_width_ratio_two,
+			"1:1", std::bind(parse_ratio, ph::_1, 2));
+	p.add("media_library_column_width_ratio_three", &media_library_column_width_ratio_three,
+			"1:1:1", std::bind(parse_ratio, ph::_1, 3));
+	p.add("playlist_editor_column_width_ratio", &playlist_editor_column_width_ratio,
+			"1:2", std::bind(parse_ratio, ph::_1, 2));
 	p.add("jump_to_now_playing_song_at_start", &jump_to_now_playing_song_at_start,
 	      "yes", yes_no);
 	p.add("ask_before_clearing_playlists", &ask_before_clearing_playlists,
@@ -545,6 +533,7 @@ bool Configuration::read(const std::vector<std::string> &config_paths, bool igno
 				return boost::regex::icase | boost::regex::literal;
 			else if (v == "basic")
 				return boost::regex::icase | boost::regex::basic;
+
 			else if (v == "extended")
 				return boost::regex::icase |  boost::regex::extended;
 			else if (v == "perl")

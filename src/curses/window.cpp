@@ -347,6 +347,10 @@ NC::Format reverseFormat(NC::Format fmt)
 		return NC::Format::NoAltCharset;
 	case NC::Format::NoAltCharset:
 		return NC::Format::AltCharset;
+	case NC::Format::Italic:
+		return NC::Format::NoItalic;
+	case NC::Format::NoItalic:
+		return NC::Format::Italic;
 	}
 	// Unreachable, silence GCC.
 	return fmt;
@@ -495,7 +499,8 @@ Window::Window(size_t startx, size_t starty, size_t width, size_t height,
 	  m_bold_counter(0),
 	  m_underline_counter(0),
 	  m_reverse_counter(0),
-	  m_alt_charset_counter(0)
+	  m_alt_charset_counter(0),
+	  m_italic_counter(0)
 {
 	if (m_start_x > size_t(COLS)
 	    ||  m_start_y > size_t(LINES)
@@ -543,6 +548,7 @@ Window::Window(const Window &rhs)
 , m_underline_counter(rhs.m_underline_counter)
 , m_reverse_counter(rhs.m_reverse_counter)
 , m_alt_charset_counter(rhs.m_alt_charset_counter)
+, m_italic_counter(rhs.m_italic_counter)
 {
 	setColor(m_color);
 }
@@ -567,6 +573,7 @@ Window::Window(Window &&rhs)
 , m_underline_counter(rhs.m_underline_counter)
 , m_reverse_counter(rhs.m_reverse_counter)
 , m_alt_charset_counter(rhs.m_alt_charset_counter)
+, m_italic_counter(rhs.m_italic_counter)
 {
 	rhs.m_window = nullptr;
 }
@@ -592,6 +599,7 @@ Window &Window::operator=(Window rhs)
 	std::swap(m_underline_counter, rhs.m_underline_counter);
 	std::swap(m_reverse_counter, rhs.m_reverse_counter);
 	std::swap(m_alt_charset_counter, rhs.m_alt_charset_counter);
+	std::swap(m_italic_counter, rhs.m_italic_counter);
 	return *this;
 }
 
@@ -683,13 +691,16 @@ void Window::moveTo(size_t new_x, size_t new_y)
 
 void Window::adjustDimensions(size_t width, size_t height)
 {
+	// NOTE: when dimensions get small, integer overflow will cause calls to
+	// `Menu<T>::refresh()` to run for a very long time.
+
 	if (m_border)
 	{
-		width -= 2;
-		height -= 2;
+		width -= width >= 2 ? 2 : 0;
+		height -= height >= 2 ? 2 : 0;
 	}
 	if (!m_title.empty())
-		height -= 2;
+		height -= height >= 2 ? 2 : 0;
 	m_height = height;
 	m_width = width;
 }
@@ -776,6 +787,11 @@ void Window::reverse(bool reverse_state) const
 void Window::altCharset(bool altcharset_state) const
 {
 	(altcharset_state ? wattron : wattroff)(m_window, A_ALTCHARSET);
+}
+
+void Window::italic(bool italic_state) const
+{
+	(italic_state ? wattron : wattroff)(m_window, A_ITALIC);
 }
 
 void Window::setTimeout(int timeout)
@@ -1410,6 +1426,12 @@ Window &Window::operator<<(Format format)
 			break;
 		case Format::NoAltCharset:
 			decrease_flag(*this, m_alt_charset_counter, &Window::altCharset);
+			break;
+		case Format::Italic:
+			increase_flag(*this, m_italic_counter, &Window::italic);
+			break;
+		case Format::NoItalic:
+			decrease_flag(*this, m_italic_counter, &Window::italic);
 			break;
 	}
 	return *this;
